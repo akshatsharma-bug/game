@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Navera Vogue Jigsaw</title>
+<style>
+body {
+  font-family: "Poppins", sans-serif;
+  background: #f9f7f4;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+}
+
+canvas {
+  border: 2px solid #000;
+  cursor: grab;
+  margin-bottom: 20px;
+}
+
+#completeMessage {
+  display: none;
+  text-align: center;
+}
+
+#completeMessage button {
+  margin-top: 15px;
+  padding: 10px 20px;
+  font-size: 16px;
+  cursor: pointer;
+  background: #ff4081;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+}
+</style>
+</head>
+<body>
+
+<h2>🧩 Solve the Navera Vogue Puzzle</h2>
+<canvas id="puzzleCanvas" width="600" height="400"></canvas>
+
+<div id="completeMessage">
+  <h3>🎉 Puzzle Complete!</h3>
+  <p>Click the button to continue:</p>
+  <button id="landingBtn">Go to Navera Vogue</button>
+</div>
+
+<script>
+// --- Config ---
+const imageURL = "https://i.ibb.co/Z6p5TP9p/Whats-App-Image-2025-09-22-at-21-55-05-6b1a612f.jpg";
+const landingURL = "https://www.instagram.com/navera_vogue/";
+const rows = 2; // easy puzzle
+const cols = 3; // 6 pieces
+
+// --- Canvas setup ---
+const canvas = document.getElementById("puzzleCanvas");
+const ctx = canvas.getContext("2d");
+const img = new Image();
+img.src = imageURL;
+
+let pieces = [];
+let pieceWidth, pieceHeight;
+let draggingPiece = null;
+let offsetX = 0, offsetY = 0;
+
+// --- Load image ---
+img.onload = () => {
+  pieceWidth = canvas.width / cols;
+  pieceHeight = canvas.height / rows;
+
+  // Create pieces with interlocking positions
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < cols; x++) {
+      pieces.push({
+        sx: x * (img.width / cols),
+        sy: y * (img.height / rows),
+        x: Math.random() * (canvas.width - pieceWidth),
+        y: Math.random() * (canvas.height - pieceHeight),
+        width: pieceWidth,
+        height: pieceHeight,
+        row: y,
+        col: x
+      });
+    }
+  }
+  drawPieces();
+};
+
+// --- Draw pieces ---
+function drawPieces() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  pieces.forEach(p => {
+    // Draw classic rectangular piece
+    ctx.drawImage(
+      img,
+      p.sx, p.sy,
+      img.width / cols, img.height / rows,
+      p.x, p.y,
+      pieceWidth, pieceHeight
+    );
+    ctx.strokeRect(p.x, p.y, pieceWidth, pieceHeight);
+  });
+}
+
+// --- Drag & Drop ---
+canvas.addEventListener("mousedown", (e) => {
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+
+  for (let i = pieces.length - 1; i >= 0; i--) {
+    let p = pieces[i];
+    if (mx > p.x && mx < p.x + p.width && my > p.y && my < p.y + p.height) {
+      draggingPiece = p;
+      offsetX = mx - p.x;
+      offsetY = my - p.y;
+      // bring to front
+      pieces.splice(i, 1);
+      pieces.push(draggingPiece);
+      break;
+    }
+  }
+});
+
+canvas.addEventListener("mousemove", (e) => {
+  if (draggingPiece) {
+    const rect = canvas.getBoundingClientRect();
+    draggingPiece.x = e.clientX - rect.left - offsetX;
+    draggingPiece.y = e.clientY - rect.top - offsetY;
+    drawPieces();
+  }
+});
+
+canvas.addEventListener("mouseup", () => {
+  if (draggingPiece) {
+    // Snap into correct position if close
+    if (Math.abs(draggingPiece.x - draggingPiece.col * pieceWidth) < 20 &&
+        Math.abs(draggingPiece.y - draggingPiece.row * pieceHeight) < 20) {
+      draggingPiece.x = draggingPiece.col * pieceWidth;
+      draggingPiece.y = draggingPiece.row * pieceHeight;
+    }
+    draggingPiece = null;
+    drawPieces();
+    if (checkSolved()) {
+      document.getElementById("completeMessage").style.display = "block";
+    }
+  }
+});
+
+// --- Check if puzzle solved ---
+function checkSolved() {
+  return pieces.every(p => 
+    Math.abs(p.x - p.col * pieceWidth) < 5 &&
+    Math.abs(p.y - p.row * pieceHeight) < 5
+  );
+}
+
+// --- Button redirect ---
+document.getElementById("landingBtn").addEventListener("click", () => {
+  window.location.href = landingURL;
+});
+</script>
+
+</body>
+</html>
